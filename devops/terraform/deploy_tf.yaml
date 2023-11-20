@@ -1,0 +1,65 @@
+parameters:
+- name: env
+  type: string
+- name: tf_folder
+  type: string
+- name: rsg_name
+  type: string
+
+
+jobs:
+- job: iacdeploy
+  pool:
+    vmImage: 'ubuntu-latest'
+  variables:
+    tfBackendResGroup: '${{ parameters.rsg_name }}-rsg-weu1-${{ parameters.env }}'
+    tfBackendStorageAcc: '${{ parameters.rsg_name }}sta{{ parameters.env }}001'
+  steps:
+  - download: current
+    displayName: 'Download iac folder'
+    artifact: iac
+  - task: CmdLine@2
+    displayName: 'Find IaC folder' 
+    inputs:
+      script: |
+        tfFolder=$(find $(Pipeline.Workspace)/* -name 'iac')
+        echo "Path to Terraform folder -> $tfFolder"
+        echo "##vso[task.setvariable variable=tfWorkingDirectory]$tfFolder"
+        # Add environment file
+        echo "##vso[task.setvariable variable=tfCommandOptions]-var=\"rsg_name=${{ parameters.rsg_name }}\""
+  - task: TerraformInstaller@0
+    displayName: 'Install Terraform latest version if not present'
+    inputs:
+      terraformVersion: 'latest'
+  - task: TerraformTaskV3@3
+    displayName: 'Terraform: init'
+    inputs:
+      provider: 'azurerm'
+      command: 'init'
+      workingDirectory: "$(tfWorkingDirectory)"
+      backendServiceArm: '${{ parameters.rsg_name }}-${{ parameters.env }}'
+      backendAzureRmResourceGroupName: "$(tfBackendResGroup)"
+      backendAzureRmStorageAccountName: "$(tfBackendStorageAcc)"
+      backendAzureRmContainerName: 'tfstate'
+      backendAzureRmKey: "${{ parameters.tf_folder }}.tfstate"
+  - task: TerraformTaskV3@3
+    displayName: 'Terraform: validate'
+    inputs:
+      provider: 'azurerm'
+      command: 'validate'
+      workingDirectory: '$(tfWorkingDirectory)'
+  - task: TerraformTaskV3@3
+    displayName: 'Terraform: plan'
+    inputs:
+      provider: 'azurerm'
+      command: 'plan'
+      workingDirectory: '$(tfWorkingDirectory)'
+      environmentServiceNameAzureRM: '${{ parameters.rsg_name }}-${{ parameters.env }}'
+  - task: TerraformTaskV3@3
+    displayName: 'Terraform: apply'
+    inputs:
+      provider: 'azurerm'
+      command: 'apply'
+      workingDirectory: '$(tfWorkingDirectory)'
+      commandOptions: '-auto-approve'
+      environmentServiceNameAzureRM: '${{ parameters.rsg_name }}-${{ parameters.env }}'

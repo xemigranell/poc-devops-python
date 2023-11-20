@@ -1,0 +1,25 @@
+parameters:
+- name: image_version
+  type: string
+- name: python_version
+  type: string
+- name: env
+  type: string
+- name: rsg_name
+  type: string
+- name: image_name
+  type: string
+- name: app_name
+  type: string
+
+jobs:
+- job: python_deploy
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+  - task: AzureWebAppContainer@1
+    displayName: 'Azure Web App on Container Deploy'
+    inputs:
+      azureSubscription: '${{ parameters.rsg_name }}-${{ parameters.env }}'
+      appName: '${{ parameters.app_name }}-${{ parameters.env }}'
+      containers: 'abbreg${{ parameters.env }}001.azurecr.io/${{ parameters.image_name }}:${{ parameters.image_version }}'

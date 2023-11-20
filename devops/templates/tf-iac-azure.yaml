@@ -1,0 +1,22 @@
+parameters:
+- name: tf_folder
+  type: string
+- name: rsg_name
+  type: string
+- name: env
+  type: string
+
+stages:
+- stage: build
+  jobs:
+  - template: ../terraform/build_tf.yaml
+    parameters:
+      tf_folder: ${{ parameters.tf_folder }}
+- stage: deploy
+  dependsOn: build
+  jobs:
+  - template: ../terraform/deploy_tf.yaml
+    parameters:
+      tf_folder: ${{ parameters.tf_folder }}
+      rsg_name: ${{ parameters.rsg_name }}
+      env: ${{ parameters.env }}

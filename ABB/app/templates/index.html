@@ -1,0 +1,22 @@
+<html> 
+  <head> 
+    <title>ABB test</title> 
+  </head> 
+  <body> 
+    <h1>ABB test</h1> 
+    <table border="1"> 
+      <thead> 
+        <tr> 
+          <th>Number of unique visitors</th> 
+        </tr> 
+      </thead> 
+      <tbody> 
+        {% for row in data %} 
+        <tr> 
+          <td>{{ row[0] }}</td>
+        </tr> 
+        {% endfor %} 
+      </tbody> 
+    </table> 
+  </body> 
+</html>

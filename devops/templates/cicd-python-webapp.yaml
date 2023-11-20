@@ -1,0 +1,44 @@
+parameters:
+- name: image_version
+  type: string
+- name: image_name
+  type: string
+- name: rsg_name
+  type: string
+- name: python_version
+  type: string
+- name: app_name
+  type: string
+- name: environments
+  type: object
+  default:
+  - name: 'dev'
+    condition: "and(succeeded('build_dev'), or(eq(variables['build.sourceBranch'], 'refs/heads/dev'), startsWith(variables['build.sourceBranch'], 'refs/heads/feature/')))"
+    depends_on: 'build_dev'
+  - name: 'pro'
+    condition: "and(succeeded('build_pro'), or(eq(variables['build.sourceBranch'], 'refs/heads/main'), startsWith(variables['build.sourceBranch'], 'refs/heads/hotfix/')))"
+    depends_on: 'build_pro'
+
+stages:
+- ${{ each env in parameters.environments }}:
+  - stage: build_${{ env.name }}
+    jobs:
+    - template: ../azpipelines/python_ci.yaml
+      parameters:
+        image_version: ${{ parameters.image_version }}
+        python_version: ${{ parameters.python_version }}
+        rsg_name: ${{ parameters.rsg_name }}
+        env: ${{ env.name }}
+        image_name: ${{ parameters.image_name}}
+  - stage: deploy_${{ env.name }}
+    dependsOn: ${{ env.depends_on }}
+    condition: ${{ env.condition }}
+    jobs:
+    - template: ../azpipelines/python_cd.yaml
+      parameters:
+        image_version: ${{ parameters.image_version }}
+        python_version: ${{ parameters.python_version }}
+        rsg_name: ${{ parameters.rsg_name }}
+        env: ${{ env.name }}
+        image_name: ${{ parameters.image_name }}
+        app_name: ${{ parameters.app_name }}

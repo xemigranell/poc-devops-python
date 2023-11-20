@@ -1,0 +1,35 @@
+trigger:
+  branches:
+    include:
+      - dev
+      - feature/*
+      - main
+  paths:
+    include:
+      - 'app'
+
+pr:
+  branches:
+    include:
+      - dev
+      - feature/*
+      - main
+  paths:
+    include:
+      - 'app'
+
+resources:
+  repositories:
+  - repository: templates
+    type: git
+    name: devops
+    ref: 'refs/heads/main'
+
+extends:
+  template: templates/cicd-python-webapp.yaml@templates
+  parameters:
+    image_version: 'latest'
+    image_name: 'abb-python'
+    python_version: '3.8'
+    rsg_name: 'abb'
+    app_name: 'abb-lwa-dev'

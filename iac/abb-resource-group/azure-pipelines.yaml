@@ -1,0 +1,28 @@
+parameters:
+- name: rsg_name
+  displayName: 'Resource group name'
+  type: string
+  values:
+  - abb
+- name: env
+  displayName: 'Environment to deploy'
+  type: string
+  values:
+  - dev
+
+resources:
+  repositories:
+  - repository: templates
+    type: git
+    name: devops
+    ref: 'refs/heads/main'
+
+trigger:
+  - manual
+
+extends:
+  template: templates/tf-iac-azure.yaml@templates
+  parameters:
+    rsg_name: ${{ parameters.rsg_name }}
+    env: ${{ parameters.env }}
+    tf_folder: 'abb-resource-group'

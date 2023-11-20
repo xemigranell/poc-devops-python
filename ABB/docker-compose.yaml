@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+  app :
+    build: ./app/
+    environment:
+      DB_DATABASE: database
+      DB_USER: username
+      DB_PASSWORD: secret
+      DB_HOST: db
+      DB_PORT: 5432
+  db:
+    build: ./db/

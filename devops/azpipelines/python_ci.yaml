@@ -1,0 +1,36 @@
+parameters:
+- name: image_version
+  type: string
+- name: python_version
+  type: string
+- name: env
+  type: string
+- name: rsg_name
+  type: string
+- name: image_name
+  type: string
+
+jobs:
+- job: python_build
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+  - task: UsePythonVersion@0
+    displayName: 'Use Python ${{ parameters.python_version }}'
+    inputs:
+      versionSpec: '${{ parameters.python_version }}'
+  - script: |
+      python -m pip install --upgrade pip
+      pip install -r requirements.txt
+    displayName: 'Install dependencies'
+  - script: |
+      pytest
+    displayName: 'pytest'
+  - task: AzureCLI@1
+    displayName: 'Build & Push image to ACR'
+    inputs:
+      azureSubscription: '${{ parameters.rsg_name }}-${{ parameters.env }}'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        set -x
+        az acr build -t ${{ parameters.image_name }}:${{ parameters.image_version }} -r abbreg${{ parameters.env }}001 .

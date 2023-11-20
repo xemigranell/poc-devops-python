@@ -1,0 +1,43 @@
+parameters:
+- name: tf_folder
+  type: string
+
+jobs:
+- job: iacbuild
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+  - task: Bash@3
+    displayName: 'Install checkov'
+    inputs:
+      targetType: 'inline'
+      script: 'pip3 install checkov'
+  - task: Bash@3
+    displayName: 'Checkov Static Code Analysis'
+    inputs:
+      targetType: 'inline'
+      script: |
+          set -x
+          mkdir $(Build.ArtifactStagingDirectory)/checkov-report
+          checkov -d ${{ parameters.tf_folder }} --output junitxml > $(Build.ArtifactStagingDirectory)/checkov-report/checkov-report.xml
+  - task: PublishTestResults@2
+    displayName: 'Publish checkov Test Results'
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '**/checkov-report*.xml'
+      searchFolder: '$(Build.ArtifactStagingDirectory)/checkov-report'
+      mergeTestResults: true
+      failTaskOnFailedTests: true
+      testRunTitle: 'CheckOV Scan'
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: '$(Build.ArtifactStagingDirectory)/tf_folder'
+      Contents: '**'
+      TargetFolder: '$(build.artifactstagingdirectory)/tf'
+      OverWrite: true
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)/tf'
+      ArtifactName: 'iac'
+      publishLocation: 'Container'
